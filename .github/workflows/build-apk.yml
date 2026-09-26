@@ -1,0 +1,44 @@
+name: Build AMX AI APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract AMX AI project
+        run: |
+          mkdir amx_project
+          unzip -q AMX_AI_v12_AMX_Logo_App.zip -d amx_project
+
+      - name: Find Flutter project
+        run: |
+          APP_DIR=$(find amx_project -name pubspec.yaml -print -quit | xargs dirname)
+          echo "APP_DIR=$APP_DIR" >> "$GITHUB_ENV"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install dependencies
+        working-directory: ${{ env.APP_DIR }}
+        run: flutter pub get
+
+      - name: Build APK
+        working-directory: ${{ env.APP_DIR }}
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AMX-AI-Android
+          path: ${{ env.APP_DIR }}/build/app/outputs/flutter-apk/app-release.apk
